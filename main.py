@@ -65,6 +65,32 @@ PRODUCTS: dict[str, dict[str, Any]] = {
 }
 
 
+# --- Shipping regions (Saudi Arabia) ---------------------------------------
+# Cash-on-delivery shipping cost per region (SAR). Adjust as needed.
+REGIONS: dict[str, dict[str, Any]] = {
+    "riyadh": {"name": "الرياض", "shippingCost": 20},
+    "makkah": {"name": "مكة المكرمة", "shippingCost": 25},
+    "madinah": {"name": "المدينة المنورة", "shippingCost": 25},
+    "eastern": {"name": "المنطقة الشرقية", "shippingCost": 25},
+    "qassim": {"name": "القصيم", "shippingCost": 30},
+    "asir": {"name": "عسير", "shippingCost": 35},
+    "tabuk": {"name": "تبوك", "shippingCost": 35},
+    "hail": {"name": "حائل", "shippingCost": 30},
+    "northern_borders": {"name": "الحدود الشمالية", "shippingCost": 40},
+    "jazan": {"name": "جازان", "shippingCost": 35},
+    "najran": {"name": "نجران", "shippingCost": 40},
+    "bahah": {"name": "الباحة", "shippingCost": 35},
+    "jouf": {"name": "الجوف", "shippingCost": 40},
+}
+
+
+def get_region(region_id: str) -> dict[str, Any]:
+    region = REGIONS.get(region_id)
+    if not region:
+        raise HTTPException(status_code=422, detail="منطقة غير صالحة")
+    return region
+
+
 def now_dt() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -102,6 +128,7 @@ class OrderItem(BaseModel):
 class PrepareOrderRequest(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     phone: str = Field(min_length=9, max_length=20)
+    regionId: str = Field(min_length=1, max_length=40)
     city: str = Field(min_length=2, max_length=60)
     address: str = Field(min_length=5, max_length=240)
     items: list[OrderItem] = Field(min_length=1)
@@ -177,6 +204,9 @@ async def ensure_schema(conn: "asyncpg.Connection") -> None:
         );
         """
     )
+    # Migration-safe: add shipping columns for stores created before regions existed.
+    await conn.execute("alter table orders add column if not exists region_id text not null default 'riyadh'")
+    await conn.execute("alter table orders add column if not exists shipping_sar integer not null default 0")
     await conn.execute(
         """
         create table if not exists tracking_events (
@@ -244,10 +274,18 @@ async def get_product(product_id: str) -> dict[str, Any]:
     return {"id": product_id, **product}
 
 
+@app.get("/api/regions")
+async def list_regions() -> list[dict[str, Any]]:
+    return [{"id": rid, **data} for rid, data in REGIONS.items()]
+
+
 @app.post("/api/orders/prepare")
 async def prepare_order(payload: PrepareOrderRequest, request: Request) -> dict[str, Any]:
     phone_e164 = normalize_phone(payload.phone)
-    clean_items, total = validate_items(payload.items)
+    region = get_region(payload.regionId)
+    clean_items, subtotal = validate_items(payload.items)
+    shipping = region["shippingCost"]
+    total = subtotal + shipping
 
     order_id = generate_order_id(now_dt())
     created = now_dt()
@@ -255,8 +293,9 @@ async def prepare_order(payload: PrepareOrderRequest, request: Request) -> dict[
     async with request.app.state.pool.acquire() as conn:
         await conn.execute(
             """
-            insert into orders (id, created_at, status, name, phone_raw, phone_e164, city, address, items, total_sar, event_id)
-            values ($1, $2, 'pending', $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
+            insert into orders
+                (id, created_at, status, name, phone_raw, phone_e164, city, address, items, total_sar, event_id, region_id, shipping_sar)
+            values ($1, $2, 'pending', $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12)
             """,
             order_id,
             created,
@@ -268,9 +307,17 @@ async def prepare_order(payload: PrepareOrderRequest, request: Request) -> dict[
             json.dumps(clean_items, ensure_ascii=False),
             total,
             payload.eventId,
+            payload.regionId,
+            shipping,
         )
 
-    return {"orderId": order_id, "total": total}
+    return {
+        "orderId": order_id,
+        "subtotal": subtotal,
+        "shipping": shipping,
+        "total": total,
+        "regionName": region["name"],
+    }
 
 
 @app.post("/api/orders/complete")
