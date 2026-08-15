@@ -38,6 +38,28 @@ KSA_PHONE_RE = re.compile(r"^5\d{8}$")
 # Placeholder starter catalog — replace with real products/prices/images
 # before going live.
 PRODUCTS: dict[str, dict[str, Any]] = {
+    "scar-gel-tcm": {
+        "name": "جل مرهم لإزالة آثار الندبات وحب الشباب",
+        "description": (
+            "تركيبة صينية تقليدية (TCM) بمستخلص سرة الأرض (سنتيلا آسياتيكا) والنياسيناميد "
+            "والأريوتين وهيالورونات الصوديوم — تساعد على تلطيف مظهر الندبات والجروح والحروق "
+            "وآثار حب الشباب وتوحيد لون البشرة. قوام شفاف خفيف سريع الامتصاص وغير دهني، "
+            "ومناسب لكل أنواع البشرة."
+        ),
+        "price": 199,
+        "image": "assets/products/scar-gel/01-hero.jpg",
+        "images": [
+            "assets/products/scar-gel/01-hero.jpg",
+            "assets/products/scar-gel/02-problems.jpg",
+            "assets/products/scar-gel/03-scar-types.jpg",
+            "assets/products/scar-gel/04-features-en-ar.jpg",
+            "assets/products/scar-gel/05-features-tcm.jpg",
+            "assets/products/scar-gel/06-ingredients.jpg",
+            "assets/products/scar-gel/07-mechanism.jpg",
+            "assets/products/scar-gel/08-texture.jpg",
+            "assets/products/scar-gel/09-specs.jpg",
+        ],
+    },
     "serum-vitc": {
         "name": "سيروم فيتامين سي للوجه",
         "description": "سيروم مضاد للأكسدة لتفتيح وتوحيد لون البشرة",
@@ -47,7 +69,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
     "cream-hydra": {
         "name": "كريم ترطيب مكثف",
         "description": "ترطيب عميق لمدة 24 ساعة لجميع أنواع البشرة",
-        "price": 69,
+        "price": 69
         "image": "",
     },
     "sunscreen-spf50": {
