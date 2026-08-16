@@ -35,20 +35,17 @@ API_BUILD = "basharti-api-1.0.0"
 
 KSA_PHONE_RE = re.compile(r"^5\d{8}$")
 
-# --- Product catalog -------------------------------------------------------
-# Placeholder starter catalog — replace with real products/prices/images
-# before going live.
+# Hero catalog — Phase 1: 4 standalone skincare products (189–199 SAR)
 PRODUCTS: dict[str, dict[str, Any]] = {
     "scar-gel-tcm": {
         "name": "جل مرهم لإزالة آثار الندبات وحب الشباب",
         "description": (
-            "تركيبة صينية تقليدية (TCM) بمستخلص سرة الأرض (سنتيلا آسياتيكا) والنياسيناميد "
-            "والأريوتين وهيالورونات الصوديوم — تساعد على تلطيف مظهر الندبات والجروح والحروق "
-            "وآثار حب الشباب وتوحيد لون البشرة. قوام شفاف خفيف سريع الامتصاص وغير دهني، "
-            "ومناسب لكل أنواع البشرة. الوزن الصافي 30 جرام."
+            "تركيبة TCM بسنتيلا آسياتيكا ونياسيناميد — لتلطيف مظهر الندبات وآثار حب الشباب "
+            "وتوحيد لون البشرة. قوام شفاف سريع الامتصاص — 30 جرام."
         ),
         "price": 199,
         "image": "assets/products/scar-gel/hero-product.png",
+        "problem": "ندبات وآثار حب الشباب",
         "images": [
             "assets/products/scar-gel/hero-product.png",
             "assets/products/scar-gel/v05-problems.png",
@@ -61,29 +58,35 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "assets/products/scar-gel/v07-specs.png",
         ],
     },
-    "serum-vitc": {
-        "name": "سيروم فيتامين سي للوجه",
-        "description": "سيروم مضاد للأكسدة لتفتيح وتوحيد لون البشرة",
-        "price": 89,
-        "image": "",
+    "niacinamide-txa-serum": {
+        "name": "سيروم نياسيناميد 10% + TXA لتفتيح البقع",
+        "description": (
+            "سيروم مركز بنياسيناميد 10% وحمض الترانيكساميك 4% — يستهدف البقع الداكنة "
+            "والكلف وآثار حب الشباب ويوحّد لون البشرة. خفيف وسريع الامتصاص — 30 مل."
+        ),
+        "price": 189,
+        "image": "assets/products/niacinamide-serum/hero.svg",
+        "problem": "البقع والتصبغات",
     },
-    "cream-hydra": {
-        "name": "كريم ترطيب مكثف",
-        "description": "ترطيب عميق لمدة 24 ساعة لجميع أنواع البشرة",
-        "price": 69,
-        "image": "",
+    "spf50-centella-sunscreen": {
+        "name": "واقي شمس SPF 50+ بسنتيلا آسياتيكا",
+        "description": (
+            "حماية عالية SPF 50+ PA++++ بتركيبة سنتيلا آسياتيكا ونياسيناميد — "
+            "ملمس خفيف بدون طبقة بيضاء، مناسب للاستخدام اليومي تحت الشمس في المملكة. 50 مل."
+        ),
+        "price": 189,
+        "image": "assets/products/spf50-sunscreen/hero.svg",
+        "problem": "حماية الشمس",
     },
-    "sunscreen-spf50": {
-        "name": "واقي شمس SPF 50",
-        "description": "حماية عالية من أشعة الشمس بملمس خفيف غير دهني",
-        "price": 75,
-        "image": "",
-    },
-    "cleanser-gentle": {
-        "name": "غسول لطيف للوجه",
-        "description": "ينظف دون أن يجرد البشرة من رطوبتها الطبيعية",
-        "price": 49,
-        "image": "",
+    "ceramide-barrier-cream": {
+        "name": "كريم حاجز البشرة — سيراميد + هيالورون",
+        "description": (
+            "كريم ترطيب بسيراميد NP وهيالورونات وبانثينول — يعزّز حاجز البشرة "
+            "ويقلّل الجفاف والاحمرار. مثالي للمناخ الجاف والمكيف — 50 جم."
+        ),
+        "price": 189,
+        "image": "assets/products/ceramide-cream/hero.svg",
+        "problem": "جفاف وضعف الحاجز",
     },
 }
 
