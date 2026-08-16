@@ -28,7 +28,6 @@ HEADERS = [
     "العنوان",
     "المنتجات",
     "المجموع الفرعي",
-    "التوصيل",
     "الإجمالي",
     "الحالة",
 ]
@@ -75,7 +74,6 @@ def build_order_payload(order: dict[str, Any], region_name: str, status: str = "
         order.get("address", ""),
         format_items(items),
         subtotal,
-        shipping,
         total,
         status,
     ]
@@ -163,7 +161,7 @@ async def _sheets_put(token: str, sheet_id: str, range_a1: str, values: list[lis
 
 async def _ensure_headers(token: str, sheet_id: str) -> None:
     tab = await _resolve_sheet_tab(token, sheet_id)
-    header_range = f"'{tab}'!A1:L1"
+    header_range = f"'{tab}'!A1:K1"
     data = await _sheets_get(token, sheet_id, header_range)
     values = data.get("values") or []
     if values and any(str(cell).strip() for cell in values[0]):
@@ -181,7 +179,7 @@ async def _append_via_api(payload: dict[str, Any]) -> None:
     tab = await _resolve_sheet_tab(token, sheet_id)
     await _ensure_headers(token, sheet_id)
 
-    append_range = f"'{tab}'!A:L"
+    append_range = f"'{tab}'!A:K"
     url = f"https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/{quote(append_range, safe='')}:append"
     params = {"valueInputOption": "USER_ENTERED", "insertDataOption": "INSERT_ROWS"}
     body = {"values": [payload["row"]]}
