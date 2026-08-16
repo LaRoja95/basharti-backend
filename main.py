@@ -288,7 +288,7 @@ allowed_origins = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:3000,https://basharti-basharti-frontend.ezlcbl.easypanel.host",
+        "http://localhost:3000,https://bacharati.store,https://www.bacharati.store,https://basharti-basharti-frontend.ezlcbl.easypanel.host",
     ).split(",")
     if origin.strip()
 ]
