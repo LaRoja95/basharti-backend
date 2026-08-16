@@ -89,21 +89,21 @@ PRODUCTS: dict[str, dict[str, Any]] = {
 
 
 # --- Shipping regions (Saudi Arabia) ---------------------------------------
-# Cash-on-delivery shipping cost per region (SAR). Adjust as needed.
+# Free delivery — shippingCost kept at 0 for all regions.
 REGIONS: dict[str, dict[str, Any]] = {
-    "riyadh": {"name": "الرياض", "shippingCost": 20},
-    "makkah": {"name": "مكة المكرمة", "shippingCost": 25},
-    "madinah": {"name": "المدينة المنورة", "shippingCost": 25},
-    "eastern": {"name": "المنطقة الشرقية", "shippingCost": 25},
-    "qassim": {"name": "القصيم", "shippingCost": 30},
-    "asir": {"name": "عسير", "shippingCost": 35},
-    "tabuk": {"name": "تبوك", "shippingCost": 35},
-    "hail": {"name": "حائل", "shippingCost": 30},
-    "northern_borders": {"name": "الحدود الشمالية", "shippingCost": 40},
-    "jazan": {"name": "جازان", "shippingCost": 35},
-    "najran": {"name": "نجران", "shippingCost": 40},
-    "bahah": {"name": "الباحة", "shippingCost": 35},
-    "jouf": {"name": "الجوف", "shippingCost": 40},
+    "riyadh": {"name": "الرياض", "shippingCost": 0},
+    "makkah": {"name": "مكة المكرمة", "shippingCost": 0},
+    "madinah": {"name": "المدينة المنورة", "shippingCost": 0},
+    "eastern": {"name": "المنطقة الشرقية", "shippingCost": 0},
+    "qassim": {"name": "القصيم", "shippingCost": 0},
+    "asir": {"name": "عسير", "shippingCost": 0},
+    "tabuk": {"name": "تبوك", "shippingCost": 0},
+    "hail": {"name": "حائل", "shippingCost": 0},
+    "northern_borders": {"name": "الحدود الشمالية", "shippingCost": 0},
+    "jazan": {"name": "جازان", "shippingCost": 0},
+    "najran": {"name": "نجران", "shippingCost": 0},
+    "bahah": {"name": "الباحة", "shippingCost": 0},
+    "jouf": {"name": "الجوف", "shippingCost": 0},
 }
 
 
