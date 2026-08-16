@@ -23,6 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from capi import dispatch_capi_event, log_capi
+from sheets import schedule_order_sheet_sync, sheets_configured
 
 logging.basicConfig(
     level=logging.INFO,
@@ -200,6 +201,7 @@ def health_payload(db_connected: bool = False) -> dict[str, Any]:
         "tiktokConfigured": bool(pixel_id and token),
         "dbConfigured": bool(os.getenv("DATABASE_URL", "").strip()),
         "dbConnected": db_connected,
+        "sheetsConfigured": sheets_configured(),
     }
 
 
@@ -390,6 +392,10 @@ async def complete_order(payload: CompleteOrderRequest, request: Request) -> dic
     ip = client_ip(request)
     user_agent = request.headers.get("user-agent", "")
     items = json.loads(row["items"]) if isinstance(row["items"], str) else row["items"]
+    order_dict = dict(row)
+    region_name = REGIONS.get(row["region_id"], {}).get("name", row["region_id"])
+
+    schedule_order_sheet_sync(order_dict, region_name, status="مؤكد")
 
     capi_payload: dict[str, Any] = {
         "value": row["total_sar"],
