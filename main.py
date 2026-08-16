@@ -47,9 +47,9 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "ومناسب لكل أنواع البشرة. الوزن الصافي 30 جرام."
         ),
         "price": 199,
-        "image": "assets/products/scar-gel/v01-hero.png",
+        "image": "assets/products/scar-gel/hero-product.png",
         "images": [
-            "assets/products/scar-gel/v01-hero.png",
+            "assets/products/scar-gel/hero-product.png",
             "assets/products/scar-gel/v05-problems.png",
             "assets/products/scar-gel/v02-scar-types.png",
             "assets/products/scar-gel/v03-benefits.png",
