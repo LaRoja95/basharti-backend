@@ -44,20 +44,20 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "تركيبة صينية تقليدية (TCM) بمستخلص سرة الأرض (سنتيلا آسياتيكا) والنياسيناميد "
             "والأريوتين وهيالورونات الصوديوم — تساعد على تلطيف مظهر الندبات والجروح والحروق "
             "وآثار حب الشباب وتوحيد لون البشرة. قوام شفاف خفيف سريع الامتصاص وغير دهني، "
-            "ومناسب لكل أنواع البشرة."
+            "ومناسب لكل أنواع البشرة. الوزن الصافي 30 جرام."
         ),
         "price": 199,
-        "image": "assets/products/scar-gel/01-hero.jpg",
+        "image": "assets/products/scar-gel/v01-hero.png",
         "images": [
-            "assets/products/scar-gel/01-hero.jpg",
-            "assets/products/scar-gel/02-problems.jpg",
-            "assets/products/scar-gel/03-scar-types.jpg",
-            "assets/products/scar-gel/04-features-en-ar.jpg",
-            "assets/products/scar-gel/05-features-tcm.jpg",
-            "assets/products/scar-gel/06-ingredients.jpg",
-            "assets/products/scar-gel/07-mechanism.jpg",
-            "assets/products/scar-gel/08-texture.jpg",
-            "assets/products/scar-gel/09-specs.jpg",
+            "assets/products/scar-gel/v01-hero.png",
+            "assets/products/scar-gel/v05-problems.png",
+            "assets/products/scar-gel/v02-scar-types.png",
+            "assets/products/scar-gel/v03-benefits.png",
+            "assets/products/scar-gel/v09-promo.png",
+            "assets/products/scar-gel/v06-features.png",
+            "assets/products/scar-gel/v08-ingredients.png",
+            "assets/products/scar-gel/v04-texture.png",
+            "assets/products/scar-gel/v07-specs.png",
         ],
     },
     "serum-vitc": {
@@ -69,7 +69,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
     "cream-hydra": {
         "name": "كريم ترطيب مكثف",
         "description": "ترطيب عميق لمدة 24 ساعة لجميع أنواع البشرة",
-        "price": 69
+        "price": 69,
         "image": "",
     },
     "sunscreen-spf50": {
@@ -189,7 +189,7 @@ def validate_items(items: list[OrderItem]) -> tuple[list[dict[str, Any]], int]:
     return clean_items, subtotal
 
 
-def health_payload() -> dict[str, Any]:
+def health_payload(db_connected: bool = False) -> dict[str, Any]:
     pixel_id = os.getenv("TIKTOK_PIXEL_ID", "").strip()
     token = os.getenv("TIKTOK_ACCESS_TOKEN", "").strip()
     return {
@@ -198,14 +198,32 @@ def health_payload() -> dict[str, Any]:
         "build": API_BUILD,
         "productsCount": len(PRODUCTS),
         "tiktokConfigured": bool(pixel_id and token),
+        "dbConfigured": bool(os.getenv("DATABASE_URL", "").strip()),
+        "dbConnected": db_connected,
     }
 
 
 def database_url() -> str:
-    url = os.getenv("DATABASE_URL", "")
+    url = os.getenv("DATABASE_URL", "").strip()
     if not url:
         raise RuntimeError("DATABASE_URL is required")
     return url.replace("postgres://", "postgresql://", 1)
+
+
+async def get_pool(request: Request) -> asyncpg.Pool:
+    pool = getattr(request.app.state, "pool", None)
+    if pool is not None:
+        return pool
+    try:
+        pool = await asyncpg.create_pool(database_url(), min_size=1, max_size=5)
+        async with pool.acquire() as conn:
+            await ensure_schema(conn)
+        request.app.state.pool = pool
+        logger.info("DB pool connected (lazy init)")
+        return pool
+    except Exception:
+        logger.exception("DB connection failed")
+        raise HTTPException(status_code=503, detail="تعذر الاتصال بقاعدة البيانات حالياً")
 
 
 async def ensure_schema(conn: "asyncpg.Connection") -> None:
@@ -246,22 +264,32 @@ async def ensure_schema(conn: "asyncpg.Connection") -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    url = database_url()
-    logger.info("STARTUP: connecting to Postgres ...")
-    app.state.pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
-    async with app.state.pool.acquire() as conn:
-        await ensure_schema(conn)
-    logger.info("STARTUP OK: DB connected, tables ensured")
+    app.state.pool = None
+    if os.getenv("DATABASE_URL", "").strip():
+        try:
+            logger.info("STARTUP: connecting to Postgres ...")
+            app.state.pool = await asyncpg.create_pool(database_url(), min_size=1, max_size=5)
+            async with app.state.pool.acquire() as conn:
+                await ensure_schema(conn)
+            logger.info("STARTUP OK: DB connected, tables ensured")
+        except Exception:
+            logger.exception("STARTUP: DB unavailable — catalog API still available")
+    else:
+        logger.warning("STARTUP: DATABASE_URL not set — orders disabled until configured")
     yield
-    await app.state.pool.close()
-    logger.info("SHUTDOWN: Postgres pool closed")
+    if app.state.pool is not None:
+        await app.state.pool.close()
+        logger.info("SHUTDOWN: Postgres pool closed")
 
 
 app = FastAPI(title="Basharti API", version="1.0.0", lifespan=lifespan)
 
 allowed_origins = [
     origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,https://basharti-basharti-frontend.ezlcbl.easypanel.host",
+    ).split(",")
     if origin.strip()
 ]
 app.add_middleware(
@@ -274,13 +302,13 @@ app.add_middleware(
 
 
 @app.get("/")
-async def root() -> dict[str, Any]:
-    return health_payload()
+async def root(request: Request) -> dict[str, Any]:
+    return health_payload(db_connected=getattr(request.app.state, "pool", None) is not None)
 
 
 @app.get("/health")
-async def health() -> dict[str, Any]:
-    return health_payload()
+async def health(request: Request) -> dict[str, Any]:
+    return health_payload(db_connected=getattr(request.app.state, "pool", None) is not None)
 
 
 @app.get("/api/products")
@@ -312,7 +340,8 @@ async def prepare_order(payload: PrepareOrderRequest, request: Request) -> dict[
     order_id = generate_order_id(now_dt())
     created = now_dt()
 
-    async with request.app.state.pool.acquire() as conn:
+    pool = await get_pool(request)
+    async with pool.acquire() as conn:
         await conn.execute(
             """
             insert into orders
@@ -344,7 +373,8 @@ async def prepare_order(payload: PrepareOrderRequest, request: Request) -> dict[
 
 @app.post("/api/orders/complete")
 async def complete_order(payload: CompleteOrderRequest, request: Request) -> dict[str, Any]:
-    async with request.app.state.pool.acquire() as conn:
+    pool = await get_pool(request)
+    async with pool.acquire() as conn:
         row = await conn.fetchrow("select * from orders where id = $1", payload.orderId)
         if not row:
             raise HTTPException(status_code=404, detail="Order not found")
@@ -389,7 +419,8 @@ async def tracking_event(payload: TrackingEventRequest, request: Request) -> dic
     ip = client_ip(request)
     user_agent = request.headers.get("user-agent", "")
 
-    async with request.app.state.pool.acquire() as conn:
+    pool = await get_pool(request)
+    async with pool.acquire() as conn:
         await conn.execute(
             """
             insert into tracking_events (created_at, event_name, event_id, order_id, payload)
@@ -424,7 +455,8 @@ async def admin_orders(request: Request, x_admin_token: str = Header(default="")
     if not expected or not secrets.compare_digest(x_admin_token, expected):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    async with request.app.state.pool.acquire() as conn:
+    pool = await get_pool(request)
+    async with pool.acquire() as conn:
         rows = await conn.fetch("select * from orders order by created_at desc limit 200")
 
     result = []
