@@ -23,6 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from capi import dispatch_capi_event, log_capi
+from meta_capi import dispatch_meta_capi_event, meta_configured
 from sheets import schedule_order_sheet_sync, sheets_configured
 
 logging.basicConfig(
@@ -59,10 +60,10 @@ PRODUCTS: dict[str, dict[str, Any]] = {
         ],
     },
     "niacinamide-txa-serum": {
-        "name": "سيروم نياسيناميد 10% + TXA لتفتيح البقع",
+        "name": "سيروم TXA + نياسيناميد 15% لتفتيح البقع",
         "description": (
-            "سيروم مركز بنياسيناميد 10% وحمض الترانيكساميك 4% — يستهدف البقع الداكنة "
-            "والكلف وآثار حب الشباب ويوحّد لون البشرة. خفيف وسريع الامتصاص — 30 مل."
+            "سيروم مركز بحمض الترانيكساميك ونياسيناميد 15% وأربيوتين — يستهدف البقع الداكنة "
+            "وآثار حب الشباب ويوحّد لون البشرة. خفيف وسريع الامتصاص — 30 مل."
         ),
         "price": 189,
         "image": "assets/products/niacinamide-serum/hero.svg",
@@ -87,6 +88,26 @@ PRODUCTS: dict[str, dict[str, Any]] = {
         "price": 189,
         "image": "assets/products/ceramide-cream/hero.svg",
         "problem": "جفاف وضعف الحاجز",
+    },
+    "arbutin-txa-cream": {
+        "name": "كريم يومي أربيوتين 7% + TXA 4% — توحيد اللون",
+        "description": (
+            "كريم ترطيب يومي بأربيوتين 7% وحمض الترانيكساميك 4% — يرطّب دون لزوجة، "
+            "يساعد على تفتيح البقع وتوحيد لون البشرة بعد حب الشباب. مناسب لجميع أنواع البشرة — 50 مل."
+        ),
+        "price": 189,
+        "image": "assets/products/arbutin-cream/hero.svg",
+        "problem": "بقع · لون غير موحّد · جفاف",
+    },
+    "hair-regrowth-spray": {
+        "name": "بخاخ دعم نمو الشعر — تركيبة عشبية",
+        "description": (
+            "بخاخ لفروة الرأس بزيوت طبيعية ومستخلصات عشبية — يدعم تقوية الشعر "
+            "وتقليل التساقط. رذاذ خفيف سريع الامتصاص — للاستخدام يومياً صباحاً ومساءً — 50 مل."
+        ),
+        "price": 199,
+        "image": "assets/products/hair-spray/hero.svg",
+        "problem": "تساقط الشعر · ضعف الشعر",
     },
 }
 
@@ -164,6 +185,9 @@ class PrepareOrderRequest(BaseModel):
 class CompleteOrderRequest(BaseModel):
     orderId: str
     eventId: str = ""
+    fbp: str = ""
+    fbc: str = ""
+    eventSourceUrl: str = ""
 
 
 class TrackingEventRequest(BaseModel):
@@ -202,6 +226,7 @@ def health_payload(db_connected: bool = False) -> dict[str, Any]:
         "build": API_BUILD,
         "productsCount": len(PRODUCTS),
         "tiktokConfigured": bool(pixel_id and token),
+        "metaConfigured": meta_configured(),
         "dbConfigured": bool(os.getenv("DATABASE_URL", "").strip()),
         "dbConnected": db_connected,
         "sheetsConfigured": sheets_configured(),
@@ -400,20 +425,34 @@ async def complete_order(payload: CompleteOrderRequest, request: Request) -> dic
 
     schedule_order_sheet_sync(order_dict, region_name, status="مؤكد")
 
+    event_id = payload.eventId or secrets.token_hex(8)
+    site_url = os.getenv("SITE_URL", "https://bacharati.store").strip().rstrip("/")
+    page_url = payload.eventSourceUrl.strip() or f"{site_url}/thank-you.html?order={payload.orderId}"
+
     capi_payload: dict[str, Any] = {
         "value": row["total_sar"],
         "currency": "SAR",
         "phone": row["phone_e164"],
         "productIds": [item["product_id"] for item in items],
+        "orderId": payload.orderId,
+        "pageUrl": page_url,
+        "fbp": payload.fbp.strip(),
+        "fbc": payload.fbc.strip(),
     }
-    site_url = os.getenv("SITE_URL", "").strip().rstrip("/")
-    if site_url:
-        capi_payload["pageUrl"] = f"{site_url}/?order={payload.orderId}"
 
     asyncio.create_task(
         dispatch_capi_event(
             event_name="CompletePayment",
-            event_id=payload.eventId or secrets.token_hex(8),
+            event_id=event_id,
+            payload=capi_payload,
+            ip=ip,
+            user_agent=user_agent,
+        )
+    )
+    asyncio.create_task(
+        dispatch_meta_capi_event(
+            event_name="CompletePayment",
+            event_id=event_id,
             payload=capi_payload,
             ip=ip,
             user_agent=user_agent,
@@ -445,11 +484,24 @@ async def tracking_event(payload: TrackingEventRequest, request: Request) -> dic
     if payload.eventName != "CompletePayment":
         # CompletePayment is dispatched from /api/orders/complete once the
         # order is actually confirmed server-side, so it isn't re-fired here.
+        relay_payload = dict(payload.payload)
+        if not relay_payload.get("pageUrl"):
+            site_url = os.getenv("SITE_URL", "https://bacharati.store").strip().rstrip("/")
+            relay_payload["pageUrl"] = site_url + "/"
         asyncio.create_task(
             dispatch_capi_event(
                 event_name=payload.eventName,
                 event_id=payload.eventId,
-                payload=payload.payload,
+                payload=relay_payload,
+                ip=ip,
+                user_agent=user_agent,
+            )
+        )
+        asyncio.create_task(
+            dispatch_meta_capi_event(
+                event_name=payload.eventName,
+                event_id=payload.eventId,
+                payload=relay_payload,
                 ip=ip,
                 user_agent=user_agent,
             )
