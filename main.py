@@ -66,7 +66,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "وآثار حب الشباب ويوحّد لون البشرة. خفيف وسريع الامتصاص — 30 مل."
         ),
         "price": 189,
-        "image": "assets/products/niacinamide-serum/hero.svg",
+        "image": "assets/products/niacinamide-serum/hero-product.png",
         "problem": "البقع والتصبغات",
     },
     "spf50-centella-sunscreen": {
@@ -76,7 +76,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "ملمس خفيف بدون طبقة بيضاء، مناسب للاستخدام اليومي تحت الشمس في المملكة. 50 مل."
         ),
         "price": 189,
-        "image": "assets/products/spf50-sunscreen/hero.svg",
+        "image": "assets/products/spf50-sunscreen/hero-product.png",
         "problem": "حماية الشمس",
     },
     "ceramide-barrier-cream": {
@@ -86,7 +86,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "ويقلّل الجفاف والاحمرار. مثالي للمناخ الجاف والمكيف — 50 جم."
         ),
         "price": 189,
-        "image": "assets/products/ceramide-cream/hero.svg",
+        "image": "assets/products/ceramide-cream/hero-product.png",
         "problem": "جفاف وضعف الحاجز",
     },
     "arbutin-txa-cream": {
@@ -96,7 +96,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "يساعد على تفتيح البقع وتوحيد لون البشرة بعد حب الشباب. مناسب لجميع أنواع البشرة — 50 مل."
         ),
         "price": 189,
-        "image": "assets/products/arbutin-cream/hero.svg",
+        "image": "assets/products/arbutin-cream/hero-product.png",
         "problem": "بقع · لون غير موحّد · جفاف",
     },
     "hair-regrowth-spray": {
@@ -106,7 +106,7 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "وتقليل التساقط. رذاذ خفيف سريع الامتصاص — للاستخدام يومياً صباحاً ومساءً — 50 مل."
         ),
         "price": 199,
-        "image": "assets/products/hair-spray/hero.svg",
+        "image": "assets/products/hair-spray/hero-product.png",
         "problem": "تساقط الشعر · ضعف الشعر",
     },
 }
