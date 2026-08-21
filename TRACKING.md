@@ -4,7 +4,7 @@
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `META_PIXEL_ID` | Yes (for Meta) | Dataset / Pixel ID, e.g. `1570480567898006` |
+| `META_PIXEL_ID` | Yes (for Meta) | Dataset / Pixel ID, e.g. `27899734523051764` |
 | `META_CAPI_ACCESS_TOKEN` | Yes (for CAPI) | From Events Manager → Pixel → Settings → Conversions API → Generate access token |
 | `META_CAPI_TEST_EVENT_CODE` | No | While testing — paste from Events Manager → Test Events → server instructions. **Unset in production.** |
 | `META_GRAPH_API_VERSION` | No | Defaults to `v19.0` |
