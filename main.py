@@ -1,9 +1,7 @@
-"""Basharti (بشرتي) — cosmetics & skincare store API.
+"""عالم حواء — women's fashion watches store API (Algeria COD).
 
-Clean, from-scratch FastAPI backend. Cash-on-delivery only. TikTok Pixel +
-Events API (CAPI) tracking wired in from day one with the correct event
-name ("CompletePayment"), avoiding the bug that broke tracking on the
-older store this replaces.
+FastAPI backend for Alam Hawa. Cash-on-delivery only. TikTok Pixel +
+Events API (CAPI) tracking with CompletePayment.
 """
 
 import asyncio
@@ -30,111 +28,114 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
-logger = logging.getLogger("basharti.api")
+logger = logging.getLogger("alamhawa.api")
 
-API_BUILD = "basharti-api-1.0.0"
+API_BUILD = "alam-hawa-api-1.0.0"
 
-KSA_PHONE_RE = re.compile(r"^5\d{8}$")
+DZ_PHONE_RE = re.compile(r"^0[5-7]\d{8}$")
 
-# Hero catalog — Phase 1: 4 standalone skincare products (189–199 SAR)
+# Catalog — 3 trending women's fashion watches (DZD)
 PRODUCTS: dict[str, dict[str, Any]] = {
-    "scar-gel-tcm": {
-        "name": "جل مرهم لإزالة آثار الندبات وحب الشباب",
+    "watch-emerald": {
+        "name": "ساعة الزمرد الذهبية — ميناء أخضر",
         "description": (
-            "تركيبة TCM بسنتيلا آسياتيكا ونياسيناميد — لتلطيف مظهر الندبات وآثار حب الشباب "
-            "وتوحيد لون البشرة. قوام شفاف سريع الامتصاص — 30 جرام."
+            "ساعة نسائية مستطيلة رفيعة بتصميم تانك، ميناء أخضر زمردي وسوار مشبّك ذهبي. "
+            "حركة كوارتز — أنيقة للارتداء اليومي والمناسبات."
         ),
-        "price": 199,
-        "image": "assets/products/scar-gel/hero-product.png",
-        "problem": "ندبات وآثار حب الشباب",
-        "images": [
-            "assets/products/scar-gel/hero-product.png",
-            "assets/products/scar-gel/v05-problems.png",
-            "assets/products/scar-gel/v02-scar-types.png",
-            "assets/products/scar-gel/v03-benefits.png",
-            "assets/products/scar-gel/v09-promo.png",
-            "assets/products/scar-gel/v06-features.png",
-            "assets/products/scar-gel/v08-ingredients.png",
-            "assets/products/scar-gel/v04-texture.png",
-            "assets/products/scar-gel/v07-specs.png",
-        ],
+        "price": 3500,
+        "image": "assets/products/watch-emerald/hero-product.svg",
+        "problem": "ساعة تراند يومية",
     },
-    "niacinamide-txa-serum": {
-        "name": "سيروم TXA + نياسيناميد 15% لتفتيح البقع",
+    "watch-pearl": {
+        "name": "ساعة اللؤلؤة الوردية — روز غولد",
         "description": (
-            "سيروم مركز بحمض الترانيكساميك ونياسيناميد 15% وأربيوتين — يستهدف البقع الداكنة "
-            "وآثار حب الشباب ويوحّد لون البشرة. خفيف وسريع الامتصاص — 30 مل."
+            "ساعة نسائية رفيعة بميناء لؤلؤي وسوار روز غولد مشبّك. "
+            "خفيفة وأنيقة — للخدمة والمناسبات."
         ),
-        "price": 189,
-        "image": "assets/products/niacinamide-serum/hero-product.png",
-        "problem": "البقع والتصبغات",
+        "price": 3200,
+        "image": "assets/products/watch-pearl/hero-product.svg",
+        "problem": "ساعة أنيقة يومية",
     },
-    "spf50-centella-sunscreen": {
-        "name": "واقي شمس SPF 50+ بسنتيلا آسياتيكا",
+    "watch-tank": {
+        "name": "ساعة التانك الذهبية المرصّعة",
         "description": (
-            "حماية عالية SPF 50+ PA++++ بتركيبة سنتيلا آسياتيكا ونياسيناميد — "
-            "ملمس خفيف بدون طبقة بيضاء، مناسب للاستخدام اليومي تحت الشمس في المملكة. 50 مل."
+            "ساعة تانك ذهبية بإطار لمّاع مرصّع وميناء أبيض أنيق. "
+            "مثالية كهدية — علبة أنيقة مع الطلب."
         ),
-        "price": 189,
-        "image": "assets/products/spf50-sunscreen/hero-product.png",
-        "problem": "حماية الشمس",
-    },
-    "ceramide-barrier-cream": {
-        "name": "كريم حاجز البشرة — سيراميد + هيالورون",
-        "description": (
-            "كريم ترطيب بسيراميد NP وهيالورونات وبانثينول — يعزّز حاجز البشرة "
-            "ويقلّل الجفاف والاحمرار. مثالي للمناخ الجاف والمكيف — 50 جم."
-        ),
-        "price": 189,
-        "image": "assets/products/ceramide-cream/hero-product.png",
-        "problem": "جفاف وضعف الحاجز",
-    },
-    "arbutin-txa-cream": {
-        "name": "كريم يومي أربيوتين 7% + TXA 4% — توحيد اللون",
-        "description": (
-            "كريم ترطيب يومي بأربيوتين 7% وحمض الترانيكساميك 4% — يرطّب دون لزوجة، "
-            "يساعد على تفتيح البقع وتوحيد لون البشرة بعد حب الشباب. مناسب لجميع أنواع البشرة — 50 مل."
-        ),
-        "price": 189,
-        "image": "assets/products/arbutin-cream/hero-product.png",
-        "problem": "بقع · لون غير موحّد · جفاف",
-    },
-    "hair-regrowth-spray": {
-        "name": "بخاخ دعم نمو الشعر — تركيبة عشبية",
-        "description": (
-            "بخاخ لفروة الرأس بزيوت طبيعية ومستخلصات عشبية — يدعم تقوية الشعر "
-            "وتقليل التساقط. رذاذ خفيف سريع الامتصاص — للاستخدام يومياً صباحاً ومساءً — 50 مل."
-        ),
-        "price": 199,
-        "image": "assets/products/hair-spray/hero-product.png",
-        "problem": "تساقط الشعر · ضعف الشعر",
+        "price": 4500,
+        "image": "assets/products/watch-tank/hero-product.svg",
+        "problem": "ساعة هدية فاخرة",
     },
 }
 
 
-# --- Shipping regions (Saudi Arabia) ---------------------------------------
-# Free delivery — shippingCost kept at 0 for all regions.
+# --- Shipping regions (Algeria — 58 wilayas) --------------------------------
 REGIONS: dict[str, dict[str, Any]] = {
-    "riyadh": {"name": "الرياض", "shippingCost": 0},
-    "makkah": {"name": "مكة المكرمة", "shippingCost": 0},
-    "madinah": {"name": "المدينة المنورة", "shippingCost": 0},
-    "eastern": {"name": "المنطقة الشرقية", "shippingCost": 0},
-    "qassim": {"name": "القصيم", "shippingCost": 0},
-    "asir": {"name": "عسير", "shippingCost": 0},
-    "tabuk": {"name": "تبوك", "shippingCost": 0},
-    "hail": {"name": "حائل", "shippingCost": 0},
-    "northern_borders": {"name": "الحدود الشمالية", "shippingCost": 0},
-    "jazan": {"name": "جازان", "shippingCost": 0},
-    "najran": {"name": "نجران", "shippingCost": 0},
-    "bahah": {"name": "الباحة", "shippingCost": 0},
-    "jouf": {"name": "الجوف", "shippingCost": 0},
+    "alger": {"name": "الجزائر", "shippingCost": 400},
+    "blida": {"name": "البليدة", "shippingCost": 450},
+    "bouira": {"name": "البويرة", "shippingCost": 450},
+    "tizi_ouzou": {"name": "تيزي وزو", "shippingCost": 450},
+    "medea": {"name": "المدية", "shippingCost": 450},
+    "boumerdes": {"name": "بومرداس", "shippingCost": 450},
+    "tipaza": {"name": "تيبازة", "shippingCost": 450},
+    "chlef": {"name": "الشلف", "shippingCost": 550},
+    "laghouat": {"name": "الأغواط", "shippingCost": 550},
+    "oum_el_bouaghi": {"name": "أم البواقي", "shippingCost": 550},
+    "batna": {"name": "باتنة", "shippingCost": 550},
+    "bejaia": {"name": "بجاية", "shippingCost": 550},
+    "tebessa": {"name": "تبسة", "shippingCost": 550},
+    "tlemcen": {"name": "تلمسان", "shippingCost": 550},
+    "tiaret": {"name": "تيارت", "shippingCost": 550},
+    "djelfa": {"name": "الجلفة", "shippingCost": 550},
+    "jijel": {"name": "جيجل", "shippingCost": 550},
+    "setif": {"name": "سطيف", "shippingCost": 550},
+    "saida": {"name": "سعيدة", "shippingCost": 550},
+    "skikda": {"name": "سكيكدة", "shippingCost": 550},
+    "sidi_bel_abbes": {"name": "سيدي بلعباس", "shippingCost": 550},
+    "annaba": {"name": "عنابة", "shippingCost": 550},
+    "guelma": {"name": "قالمة", "shippingCost": 550},
+    "constantine": {"name": "قسنطينة", "shippingCost": 550},
+    "mostaganem": {"name": "مستغانم", "shippingCost": 550},
+    "msila": {"name": "المسيلة", "shippingCost": 550},
+    "mascara": {"name": "معسكر", "shippingCost": 550},
+    "oran": {"name": "وهران", "shippingCost": 550},
+    "bordj_bou_arreridj": {"name": "برج بوعريريج", "shippingCost": 550},
+    "el_tarf": {"name": "الطارف", "shippingCost": 550},
+    "tissemsilt": {"name": "تيسمسيلت", "shippingCost": 550},
+    "khenchela": {"name": "خنشلة", "shippingCost": 550},
+    "souk_ahras": {"name": "سوق أهراس", "shippingCost": 550},
+    "mila": {"name": "ميلة", "shippingCost": 550},
+    "ain_defla": {"name": "عين الدفلى", "shippingCost": 550},
+    "ain_temouchent": {"name": "عين تموشنت", "shippingCost": 550},
+    "relizane": {"name": "غليزان", "shippingCost": 550},
+    "biskra": {"name": "بسكرة", "shippingCost": 700},
+    "bechar": {"name": "بشار", "shippingCost": 700},
+    "ouargla": {"name": "ورقلة", "shippingCost": 700},
+    "el_bayadh": {"name": "البيض", "shippingCost": 700},
+    "el_oued": {"name": "الوادي", "shippingCost": 700},
+    "naama": {"name": "النعامة", "shippingCost": 700},
+    "ghardaia": {"name": "غرداية", "shippingCost": 700},
+    "ouled_djellal": {"name": "أولاد جلال", "shippingCost": 700},
+    "touggourt": {"name": "تقرت", "shippingCost": 700},
+    "el_meghaier": {"name": "المغير", "shippingCost": 700},
+    "el_meniaa": {"name": "المنيعة", "shippingCost": 700},
+    "adrar": {"name": "أدرار", "shippingCost": 900},
+    "tamanrasset": {"name": "تمنراست", "shippingCost": 900},
+    "illizi": {"name": "إليزي", "shippingCost": 900},
+    "tindouf": {"name": "تندوف", "shippingCost": 900},
+    "timimoun": {"name": "تيميمون", "shippingCost": 900},
+    "bordj_badji_mokhtar": {"name": "برج باجي مختار", "shippingCost": 900},
+    "beni_abbes": {"name": "بني عباس", "shippingCost": 900},
+    "in_salah": {"name": "عين صالح", "shippingCost": 900},
+    "in_guezzam": {"name": "عين قزام", "shippingCost": 900},
+    "djanet": {"name": "جانت", "shippingCost": 900},
 }
 
 
 def get_region(region_id: str) -> dict[str, Any]:
     region = REGIONS.get(region_id)
     if not region:
-        raise HTTPException(status_code=422, detail="منطقة غير صالحة")
+        raise HTTPException(status_code=422, detail="ولاية غير صالحة")
     return region
 
 
@@ -148,9 +149,18 @@ def sha256(value: str) -> str:
 
 def normalize_phone(raw_phone: str) -> str:
     digits = re.sub(r"\D", "", raw_phone)
-    if not KSA_PHONE_RE.fullmatch(digits):
-        raise HTTPException(status_code=422, detail="رقم الجوال يجب أن يبدأ بـ 5 ويتكون من 9 أرقام")
-    return "+966" + digits
+    if digits.startswith("213"):
+        rest = digits[3:]
+        if rest.startswith("0"):
+            rest = rest[1:]
+        if len(rest) == 9 and rest[0] in "567":
+            return "+213" + rest
+    if DZ_PHONE_RE.fullmatch(digits):
+        return "+213" + digits[1:]
+    raise HTTPException(
+        status_code=422,
+        detail="رقم الهاتف يجب أن يبدأ بـ 05 أو 06 أو 07 (10 أرقام) أو +213",
+    )
 
 
 def client_ip(request: Request) -> str:
@@ -163,7 +173,7 @@ def client_ip(request: Request) -> str:
 
 def generate_order_id(created: datetime) -> str:
     suffix = secrets.token_hex(3).upper()
-    return f"bshr{created.strftime('%m%d%Y')}{suffix}"
+    return f"hawa{created.strftime('%m%d%Y')}{suffix}"
 
 
 # --- Request / response models ---------------------------------------------
@@ -222,7 +232,7 @@ def health_payload(db_connected: bool = False) -> dict[str, Any]:
     token = os.getenv("TIKTOK_ACCESS_TOKEN", "").strip()
     return {
         "status": "ok",
-        "service": "basharti-api",
+        "service": "alam-hawa-api",
         "build": API_BUILD,
         "productsCount": len(PRODUCTS),
         "tiktokConfigured": bool(pixel_id and token),
@@ -275,7 +285,7 @@ async def ensure_schema(conn: "asyncpg.Connection") -> None:
         """
     )
     # Migration-safe: add shipping columns for stores created before regions existed.
-    await conn.execute("alter table orders add column if not exists region_id text not null default 'riyadh'")
+    await conn.execute("alter table orders add column if not exists region_id text not null default 'alger'")
     await conn.execute("alter table orders add column if not exists shipping_sar integer not null default 0")
     await conn.execute(
         """
@@ -431,7 +441,7 @@ async def complete_order(payload: CompleteOrderRequest, request: Request) -> dic
 
     capi_payload: dict[str, Any] = {
         "value": row["total_sar"],
-        "currency": "SAR",
+        "currency": "DZD",
         "phone": row["phone_e164"],
         "productIds": [item["product_id"] for item in items],
         "orderId": payload.orderId,
