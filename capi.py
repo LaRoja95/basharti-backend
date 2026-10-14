@@ -1,4 +1,4 @@
-"""TikTok Events API (server-side Conversions API) for Basharti.
+"""TikTok Events API (server-side Conversions API) for Alam Hawa.
 
 Event names used here are TikTok's OWN standard event names throughout
 (PageView, ViewContent, AddToCart, InitiateCheckout, CompletePayment) so
@@ -20,7 +20,7 @@ from typing import Any
 
 import httpx
 
-logger = logging.getLogger("basharti.capi")
+logger = logging.getLogger("alamhawa.capi")
 
 TIKTOK_EVENTS_URL = "https://business-api.tiktok.com/open_api/v1.3/event/track/"
 
@@ -49,16 +49,16 @@ def digits_only(value: str) -> str:
 
 
 def normalize_phone_e164(phone_raw: str) -> str:
-    """Best-effort Saudi phone normalization to +966XXXXXXXXX."""
+    """Best-effort Algeria phone normalization to +213XXXXXXXXX."""
     digits = digits_only(phone_raw)
     if not digits:
         return ""
-    if digits.startswith("966"):
+    if digits.startswith("213"):
         return f"+{digits}"
-    if digits.startswith("0"):
-        return f"+966{digits[1:]}"
-    if len(digits) == 9 and digits.startswith("5"):
-        return f"+966{digits}"
+    if digits.startswith("0") and len(digits) == 10 and digits[1] in "567":
+        return f"+213{digits[1:]}"
+    if len(digits) == 9 and digits[0] in "567":
+        return f"+213{digits}"
     return f"+{digits}"
 
 

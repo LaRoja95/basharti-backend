@@ -13,7 +13,7 @@ from urllib.parse import quote
 
 import httpx
 
-logger = logging.getLogger("basharti.sheets")
+logger = logging.getLogger("alamhawa.sheets")
 
 SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 DEFAULT_SHEET_ID = "1FUA6zyF0DJXwiGvQNem_9iGa0Dv8DWiJozdkkVe2y1Y"
@@ -45,7 +45,7 @@ def format_items(items: list[dict[str, Any]]) -> str:
         name = item.get("name") or item.get("product_id") or "منتج"
         qty = item.get("quantity", 1)
         price = item.get("price", 0)
-        parts.append(f"{name} × {qty} ({price} ر.س)")
+        parts.append(f"{name} × {qty} ({price} د.ج)")
     return " | ".join(parts)
 
 

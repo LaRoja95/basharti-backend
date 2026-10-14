@@ -1,5 +1,5 @@
 /**
- * Basharti — ربط Google Sheet بالطلبات
+ * عالم حواء — ربط Google Sheet بالطلبات
  *
  * 1. افتحي الـ Sheet → Extensions → Apps Script
  * 2. الصقي هذا الكود بالكامل

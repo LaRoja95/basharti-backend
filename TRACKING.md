@@ -1,4 +1,4 @@
-# Basharti tracking — environment variables
+# عالم حواء — tracking environment variables
 
 ## Meta Pixel + Conversions API (CAPI)
 
@@ -20,12 +20,13 @@
 
 | Variable | Description |
 |----------|-------------|
-| `SITE_URL` | e.g. `https://bacharati.store` — used as `event_source_url` on Purchase |
+| `SITE_URL` | e.g. `https://alam-hawa.pages.dev` — used as `event_source_url` on Purchase |
+| `CORS_ORIGINS` | Comma-separated storefront origins (must include the live Pages URL) |
 | `TRACKING_LOG_CAPI` | `true` (default) — log CAPI send/result lines |
 
 ## Testing Meta CAPI
 
-1. Set `META_CAPI_TEST_EVENT_CODE` in Easypanel (backend env).
+1. Set `META_CAPI_TEST_EVENT_CODE` in the backend env.
 2. Redeploy backend.
 3. Place a test order on the store.
 4. Open Meta Events Manager → Test Events — confirm `Purchase` with `action_source: website`.

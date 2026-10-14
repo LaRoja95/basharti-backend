@@ -1,4 +1,4 @@
-"""Meta Conversions API (server-side) for Basharti.
+"""Meta Conversions API (server-side) for Alam Hawa.
 
 Mirrors the TikTok CAPI pattern in capi.py: fire-and-forget async dispatch,
 shared event_id with the browser pixel for deduplication, hashed PII only.
@@ -16,7 +16,7 @@ from typing import Any
 
 import httpx
 
-logger = logging.getLogger("basharti.meta_capi")
+logger = logging.getLogger("alamhawa.meta_capi")
 
 META_GRAPH_VERSION = os.getenv("META_GRAPH_API_VERSION", "v19.0").strip() or "v19.0"
 
@@ -52,16 +52,16 @@ def digits_only(value: str) -> str:
 
 
 def meta_hash_phone(phone_raw: str) -> str:
-    """Normalize to digits with country code (no +), then SHA-256."""
+    """Normalize Algeria phone to digits with country code (no +), then SHA-256."""
     digits = digits_only(phone_raw)
     if not digits:
         return ""
-    if digits.startswith("966"):
+    if digits.startswith("213"):
         normalized = digits
-    elif digits.startswith("0"):
-        normalized = f"966{digits[1:]}"
-    elif len(digits) == 9 and digits.startswith("5"):
-        normalized = f"966{digits}"
+    elif digits.startswith("0") and len(digits) == 10 and digits[1] in "567":
+        normalized = f"213{digits[1:]}"
+    elif len(digits) == 9 and digits[0] in "567":
+        normalized = f"213{digits}"
     else:
         normalized = digits
     return sha256_hex(normalized)

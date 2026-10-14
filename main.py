@@ -43,8 +43,9 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "حركة كوارتز — أنيقة للارتداء اليومي والمناسبات."
         ),
         "price": 3500,
-        "image": "assets/products/watch-emerald/hero-product.svg",
+        "image": "assets/products/watch-emerald/hero-photo.jpg",
         "problem": "ساعة تراند يومية",
+        "dept": "watches",
     },
     "watch-pearl": {
         "name": "ساعة اللؤلؤة الوردية — روز غولد",
@@ -53,8 +54,9 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "خفيفة وأنيقة — للخدمة والمناسبات."
         ),
         "price": 3200,
-        "image": "assets/products/watch-pearl/hero-product.svg",
+        "image": "assets/products/watch-pearl/hero-photo.jpg",
         "problem": "ساعة أنيقة يومية",
+        "dept": "watches",
     },
     "watch-tank": {
         "name": "ساعة التانك الذهبية المرصّعة",
@@ -63,8 +65,75 @@ PRODUCTS: dict[str, dict[str, Any]] = {
             "مثالية كهدية — علبة أنيقة مع الطلب."
         ),
         "price": 4500,
-        "image": "assets/products/watch-tank/hero-product.svg",
+        "image": "assets/products/watch-tank/hero-photo.jpg",
         "problem": "ساعة هدية فاخرة",
+        "dept": "watches",
+    },
+    "glasses-cat-eye": {
+        "name": "نظارات كات آي — روز غولد",
+        "description": (
+            "نظارات نسائية بشكل كات آي وإطار روز غولد أنيق. "
+            "عدسات بحماية UV — لمسة شبابية لكل يوم."
+        ),
+        "price": 2800,
+        "image": "assets/products/glasses-cat-eye/hero-photo.jpg",
+        "problem": "نظارات تراند",
+        "dept": "glasses",
+    },
+    "glasses-oval": {
+        "name": "نظارات بيضاوية شفافة",
+        "description": (
+            "نظارات بيضاوية ناعمة بلون مووف هادئ. "
+            "خفيفة ومريحة — للجامعة والخدمة والخروجات."
+        ),
+        "price": 2500,
+        "image": "assets/products/glasses-oval/hero-photo.jpg",
+        "problem": "نظارات يومية",
+        "dept": "glasses",
+    },
+    "glasses-aviator": {
+        "name": "نظارات أفياتور نسائية ذهبية",
+        "description": (
+            "نظارات أفياتور ذهبية بلمسة أنثوية ناعمة. "
+            "ستايل كلاسيك مع عدسات خفيفة وحماية UV."
+        ),
+        "price": 3000,
+        "image": "assets/products/glasses-aviator/hero-photo.jpg",
+        "problem": "نظارات كلاسيك",
+        "dept": "glasses",
+    },
+    "pajama-rose": {
+        "name": "بيجاما ساتان روز",
+        "description": (
+            "طقم ملابس نوم ساتان بلون روز غبار: قميص وبنطلون بملمس حريري ناعم. "
+            "أنيق ومريح — مثالي للهدايا ولياليكِ."
+        ),
+        "price": 4200,
+        "image": "assets/products/pajama-rose/hero-photo.jpg",
+        "problem": "بيجاما ساتان",
+        "dept": "clothing",
+    },
+    "pajama-cream": {
+        "name": "بيجاما كريم بالدانتيل",
+        "description": (
+            "طقم ساتان كريمي بتفاصيل دانتيل ناعمة على الياقة. "
+            "لمسة رومانسية فاخرة لملابس النوم."
+        ),
+        "price": 4500,
+        "image": "assets/products/pajama-cream/hero-photo.jpg",
+        "problem": "بيجاما دانتيل",
+        "dept": "clothing",
+    },
+    "pajama-mauve": {
+        "name": "بيجاما مووف قطنية",
+        "description": (
+            "طقم بيجاما قطني بلون مووف هادئ وتفصيلة نظيفة. "
+            "مريح للتنفس — للنوم اليومي بكل راحة."
+        ),
+        "price": 3800,
+        "image": "assets/products/pajama-mauve/hero-photo.jpg",
+        "problem": "بيجاما قطن",
+        "dept": "clothing",
     },
 }
 
@@ -322,13 +391,13 @@ async def lifespan(app: FastAPI):
         logger.info("SHUTDOWN: Postgres pool closed")
 
 
-app = FastAPI(title="Basharti API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Alam Hawa API", version="1.0.0", lifespan=lifespan)
 
 allowed_origins = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:3000,https://bacharati.store,https://www.bacharati.store,https://basharti-basharti-frontend.ezlcbl.easypanel.host",
+        "http://localhost:3000,https://alam-hawa.pages.dev,https://www.alam-hawa.pages.dev",
     ).split(",")
     if origin.strip()
 ]
@@ -436,7 +505,7 @@ async def complete_order(payload: CompleteOrderRequest, request: Request) -> dic
     schedule_order_sheet_sync(order_dict, region_name, status="مؤكد")
 
     event_id = payload.eventId or secrets.token_hex(8)
-    site_url = os.getenv("SITE_URL", "https://bacharati.store").strip().rstrip("/")
+    site_url = os.getenv("SITE_URL", "https://alam-hawa.pages.dev").strip().rstrip("/")
     page_url = payload.eventSourceUrl.strip() or f"{site_url}/thank-you.html?order={payload.orderId}"
 
     capi_payload: dict[str, Any] = {
@@ -496,7 +565,7 @@ async def tracking_event(payload: TrackingEventRequest, request: Request) -> dic
         # order is actually confirmed server-side, so it isn't re-fired here.
         relay_payload = dict(payload.payload)
         if not relay_payload.get("pageUrl"):
-            site_url = os.getenv("SITE_URL", "https://bacharati.store").strip().rstrip("/")
+            site_url = os.getenv("SITE_URL", "https://alam-hawa.pages.dev").strip().rstrip("/")
             relay_payload["pageUrl"] = site_url + "/"
         asyncio.create_task(
             dispatch_capi_event(
